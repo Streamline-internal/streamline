@@ -1,0 +1,43 @@
+services:
+  portal-actions-proxy:
+    container_name: portal-actions-proxy
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    env_file:
+      - /opt/streamline/config/.env
+    volumes:
+      - /opt/streamline/compose/portal-actions-proxy/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /opt/streamline/compose/portal-actions-proxy/conf.d:/etc/nginx/conf.d:ro
+    networks:
+      web:
+        aliases:
+          - portal-actions-proxy
+    labels:
+      - "traefik.enable=true"
+
+      - "traefik.http.routers.pa-https.rule=Host(`api.streamline-internal.com`) && PathPrefix(`/portal-actions`)"
+      - "traefik.http.routers.pa-https.entrypoints=websecure"
+      - "traefik.http.routers.pa-https.tls=true"
+      - "traefik.http.routers.pa-https.service=pa-svc"
+
+      - "traefik.http.routers.pa-http.rule=Host(`api.streamline-internal.com`) && PathPrefix(`/portal-actions`)"
+      - "traefik.http.routers.pa-http.entrypoints=web"
+      - "traefik.http.routers.pa-http.middlewares=pa-redirect"
+      - "traefik.http.middlewares.pa-redirect.redirectscheme.scheme=https"
+
+      - "traefik.http.services.pa-svc.loadbalancer.server.port=80"
+      - "traefik.docker.network=web"
+
+networks:
+  web:
+    external: true
+
+# --- auto-added root routers (Host only) ---
+    labels:
+      - "traefik.http.routers.pa-root-https.rule=Host(`api.streamline-internal.com`)"
+      - "traefik.http.routers.pa-root-https.entrypoints=websecure"
+      - "traefik.http.routers.pa-root-https.tls=true"
+      - "traefik.http.routers.pa-root-https.service=pa-svc"
+      - "traefik.http.routers.pa-root-http.rule=Host(`api.streamline-internal.com`)"
+      - "traefik.http.routers.pa-root-http.entrypoints=web"
+      - "traefik.http.routers.pa-root-http.middlewares=pa-redirect"

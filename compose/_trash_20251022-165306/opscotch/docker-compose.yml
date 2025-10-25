@@ -1,0 +1,67 @@
+name: opscotch
+
+services:
+  db:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - opscotch_db:/var/lib/postgresql/data
+    networks:
+      - net_opscotch
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  # Opscotch (UI + backend)
+  opscotch:
+    image: ${OPSCOTCH_IMAGE}
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: ${NODE_ENV}
+      # Backend
+      PORT: ${BACKEND_PORT}
+      BACKEND_PORT: ${BACKEND_PORT}
+      # UI
+      WEB_PORT: ${WEB_PORT}
+      # URLs publiques
+      BASE_URL: ${BASE_URL}
+      APP_BASE_URL: ${APP_BASE_URL}
+      SITE_URL: ${SITE_URL}
+      PUBLIC_URL: ${PUBLIC_URL}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      # CORS + cookies
+      WHITELISTED_ORIGINS: ${WHITELISTED_ORIGINS}
+      COOKIE_DOMAIN: ${API_HOST}
+      SESSION_COOKIE_DOMAIN: ${API_HOST}
+      ALLOW_SECURE_COOKIES: "true"
+      DISABLE_SECURE_COOKIES: "false"
+      # DB
+      DATABASE_URL: postgresql://postgres:Ij21G6FnFr%3C%40%2AVP%2CNjjwL3p%2FRG22Rd0b7e%3D%3DmBM%3FyHDAvh%3BLSO%2A%3Duy.d@db:5432/opscotch?schema=public
+      # Bootstrap admin (une seule fois si supporté par l'image)
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD}
+    networks:
+      - net_opscotch
+    # AUCUNE publication de ports hôte : exposition via Caddy uniquement
+    healthcheck:
+      test: ["CMD", "sh", "-c", "curl -fsS http://127.0.0.1:${BACKEND_PORT}/ping || curl -fsS http://localhost:${BACKEND_PORT}/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 10
+
+networks:
+  net_opscotch:
+    name: net_opscotch
+
+volumes:
+  opscotch_db:
+    name: opscotch_db

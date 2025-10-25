@@ -1,0 +1,51 @@
+services:
+  hoppscotch-gateway:
+    container_name: hoppscotch-gateway
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    volumes:
+      - /opt/streamline/compose/hoppscotch-gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /opt/streamline/compose/hoppscotch-gateway/www:/usr/share/nginx/html:ro
+    networks:
+      web:
+        aliases: [hoppscotch-gateway]
+      hoppscotch_default:
+        aliases: [hoppscotch-gateway]
+    labels:
+      - "traefik.enable=true"
+
+      # ROOT Host -> gateway (HTTPS)
+      - "traefik.http.routers.hopp-root-https.rule=Host(`api.streamline-internal.com`)"
+      - "traefik.http.routers.hopp-root-https.entrypoints=websecure"
+      - "traefik.http.routers.hopp-root-https.tls=true"
+      - "traefik.http.routers.hopp-root-https.service=hopp-svc"
+      - "traefik.http.routers.hopp-root-https.priority=50"
+
+      # ROOT Host -> redirect HTTPS (HTTP)
+      - "traefik.http.routers.hopp-root-http.rule=Host(`api.streamline-internal.com`)"
+      - "traefik.http.routers.hopp-root-http.entrypoints=web"
+      - "traefik.http.routers.hopp-root-http.middlewares=hopp-redirect"
+      - "traefik.http.routers.hopp-root-http.priority=50"
+
+      - "traefik.http.middlewares.hopp-redirect.redirectscheme.scheme=https"
+
+      # Service: gateway listens on :80
+      - "traefik.http.services.hopp-svc.loadbalancer.server.port=80"
+
+      # Ensure Traefik uses the 'web' docker network
+      - "traefik.docker.network=web"
+      - "traefik.http.routers.hopp-root2-https.rule=Host(`api.streamline-internal.com`) && PathPrefix(`/`)"
+      - "traefik.http.routers.hopp-root2-https.entrypoints=websecure"
+      - "traefik.http.routers.hopp-root2-https.tls=true"
+      - "traefik.http.routers.hopp-root2-https.service=hopp-svc"
+      - "traefik.http.routers.hopp-root2-https.priority=20"
+      - "traefik.http.routers.hopp-root2-http.rule=Host(`api.streamline-internal.com`) && PathPrefix(`/`)"
+      - "traefik.http.routers.hopp-root2-http.entrypoints=web"
+      - "traefik.http.routers.hopp-root2-http.middlewares=hopp-redirect"
+      - "traefik.http.routers.hopp-root2-http.priority=20"
+
+networks:
+  web:
+    external: true
+  hoppscotch_default:
+    external: true

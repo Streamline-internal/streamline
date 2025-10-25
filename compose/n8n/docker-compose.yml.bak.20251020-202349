@@ -1,0 +1,29 @@
+services:
+  n8n:
+    image: n8nio/n8n:latest
+    env_file: [ "/opt/streamline/config/.env" ]
+    environment:
+      - GENERIC_TIMEZONE=Europe/Paris
+      - N8N_BASIC_AUTH_ACTIVE=true
+      - N8N_HOST=app.streamline-internal.com
+      - N8N_PORT=5678
+      - N8N_PROTOCOL=https
+      - N8N_DIAGNOSTICS_DISABLED=true
+    volumes:
+      - /opt/streamline/data/n8n:/home/node/.n8n
+    labels:
+      traefik.enable: "true"
+      traefik.http.routers.n8n-https.entrypoints: websecure
+      traefik.http.routers.n8n-https.rule: Host(`app.streamline-internal.com`)
+      traefik.http.routers.n8n-https.tls: "true"
+      traefik.http.services.n8n.loadbalancer.server.port: "5678"
+      traefik.http.routers.n8n-http.entrypoints: web
+      traefik.http.routers.n8n-http.rule: Host(`app.streamline-internal.com`)
+      traefik.http.routers.n8n-http.middlewares: redirect-https
+      traefik.http.middlewares.redirect-https.redirectscheme.scheme: https
+      traefik.http.middlewares.redirect-https.redirectscheme.permanent: "true"
+    networks: [ "web" ]
+    restart: always
+networks:
+  web:
+    external: true

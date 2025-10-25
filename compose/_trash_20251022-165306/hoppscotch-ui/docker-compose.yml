@@ -1,0 +1,25 @@
+services:
+  hoppscotch-ui:
+    image: hoppscotch/hoppscotch:latest
+    restart: unless-stopped
+    networks: [web]
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: "web"
+
+      # HTTP -> HTTPS
+      traefik.http.middlewares.hopp-redirect.redirectscheme.scheme: "https"
+      traefik.http.routers.hopp-http.entrypoints: "web"
+      traefik.http.routers.hopp-http.rule: "Host(`${DOMAIN_API}`)"
+      traefik.http.routers.hopp-http.middlewares: "hopp-redirect"
+
+      # ROOT vers Hoppscotch (priorité basse pour laisser /portal-actions passer devant)
+      traefik.http.routers.hopp-https.entrypoints: "websecure"
+      traefik.http.routers.hopp-https.rule: "Host(`${DOMAIN_API}`)"
+      traefik.http.routers.hopp-https.priority: "10"
+      traefik.http.routers.hopp-https.tls: "true"
+      traefik.http.routers.hopp-https.service: "hopp-svc"
+      traefik.http.services.hopp-svc.loadbalancer.server.port: "3000"
+networks:
+  web:
+    external: true

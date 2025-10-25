@@ -1,0 +1,25 @@
+version: "3.8"
+
+services:
+  budibase:
+    image: ${PORTAL_BUDIBASE_IMAGE}
+    restart: unless-stopped
+    env_file:
+      - /opt/streamline/config/.env
+    environment:
+      - BB_ADMIN_EMAIL=${PORTAL_BUDIBASE_ADMIN_EMAIL:-admin@local}
+      - BB_ADMIN_PASSWORD=${PORTAL_BUDIBASE_ADMIN_PASSWORD:-ChangeMe_123!}
+    volumes:
+      - /opt/streamline/data/budibase:/data
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.budibase.rule=Host(`${PORTAL_BUDIBASE_DOMAIN}`)"
+      - "traefik.http.routers.budibase.entrypoints=${PORTAL_TRAEFIK_ENTRYPOINT}"
+      - "traefik.http.routers.budibase.tls=true"
+      - "traefik.http.services.budibase.loadbalancer.server.port=${PORTAL_BUDIBASE_INTERNAL_PORT}"
+
+networks:
+  web:
+    external: true

@@ -1,0 +1,32 @@
+services:
+  opscotch:
+    environment:
+      # URLs locales cohérentes (utilisées par le code)
+      VITE_BASE_URL: "http://127.0.0.1:3170"
+      VITE_BACKEND_API_URL: "http://127.0.0.1:8080"
+      BASE_URL: "http://127.0.0.1:3170"
+      APP_BASE_URL: "http://127.0.0.1:3170"
+      NEXTAUTH_URL: "http://127.0.0.1:3170"
+      PUBLIC_URL: "http://127.0.0.1:3170"
+      SITE_URL: "http://127.0.0.1:3170"
+      WHITELISTED_ORIGINS: "http://127.0.0.1:3170"
+      # Cookies HTTP en local
+      COOKIE_DOMAIN: "localhost"
+      SESSION_COOKIE_DOMAIN: "localhost"
+      DISABLE_SECURE_COOKIES: "true"
+      ALLOW_SECURE_COOKIES: "false"
+      # DB
+      DATABASE_URL: "postgresql://opscotch:opscotch123@db:5432/opscotch?schema=public"
+      # Ports
+      PORT: "8080"
+      BACKEND_PORT: "8080"
+      WEB_PORT: "3200"
+    ports:
+      - "3000:3000"
+      - "3170:3170"
+      - "8080:8080"
+    healthcheck:
+      test: ["CMD", "sh", "-lc", "exit 0"]
+      interval: 30s
+      timeout: 5s
+      retries: 1

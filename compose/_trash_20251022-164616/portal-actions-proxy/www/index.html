@@ -1,0 +1,85 @@
+<!doctype html><html lang="fr"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Streamline Connect — Lier une API</title>
+<style>
+  :root { color-scheme: light dark; }
+  body { font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif; margin: 0; background: #0b1020; color: #e7ecff; }
+  .wrap { max-width: 680px; margin: 6vh auto; padding: 32px; background: #0f1733; border: 1px solid #1e2a55; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,.35); }
+  h1 { margin: 0 0 8px; font-size: 28px; }
+  p.lead { margin: 0 0 24px; color: #a8b3e6 }
+  label { display:block; margin:16px 0 6px; color:#cbd6ff; font-weight:600 }
+  input, select, textarea { width:100%; padding:12px 14px; border-radius:10px; border:1px solid #273566; background:#101a3d; color:#e7ecff; outline: none; }
+  input:focus, select:focus, textarea:focus { border-color:#4b68ff; box-shadow: 0 0 0 3px rgba(75,104,255,.25); }
+  .row { display:flex; gap:12px }
+  .row > * { flex:1 }
+  button { margin-top:22px; width:100%; padding:14px 16px; border-radius:12px; border:0; background:#4b68ff; color:#fff; font-weight:700; cursor:pointer }
+  button:disabled { opacity:.6; cursor:not-allowed }
+  .note { margin-top:10px; font-size:13px; color:#9fb0ff }
+  .ok { margin-top:16px; padding:12px; background:#11361f; border:1px solid #1c6d37; color:#b7ffcf; border-radius:10px; display:none }
+  .err { margin-top:16px; padding:12px; background:#3a1218; border:1px solid #7a2330; color:#ffd3da; border-radius:10px; display:none; white-space:pre-wrap }
+</style>
+<div class="wrap">
+  <h1>Connecter votre API</h1>
+  <p class="lead">Saisissez votre clé API en toute sécurité pour activer l’intégration.</p>
+
+  <form id="connect">
+    <label for="provider">Fournisseur</label>
+    <select id="provider" name="provider" required>
+      <option value="" disabled selected>Choisir…</option>
+      <option>OpenAI</option>
+      <option>Stripe</option>
+      <option>Notion</option>
+      <option>HubSpot</option>
+      <option>Slack</option>
+      <option value="Autre">Autre</option>
+    </select>
+
+    <div class="row">
+      <div>
+        <label for="label">Nom lisible (ex: “Equipe Marketing”)</label>
+        <input id="label" name="label" placeholder="Nom d’identifiant" required>
+      </div>
+      <div>
+        <label for="env">Environnement</label>
+        <select id="env" name="env" required>
+          <option>production</option>
+          <option>staging</option>
+          <option>dev</option>
+        </select>
+      </div>
+    </div>
+
+    <label for="api_key">Clé API</label>
+    <input id="api_key" name="api_key" type="password" autocomplete="off" placeholder="••••••••••••" required>
+
+    <label for="extra">Notes (optionnel)</label>
+    <textarea id="extra" name="extra" rows="3" placeholder="Scopes, restrictions IP, etc."></textarea>
+
+    <button type="submit">Valider et connecter</button>
+    <div class="note">Vos secrets sont transmis côté serveur et stockés de façon chiffrée.</div>
+    <div class="ok" id="ok">✅ Clé enregistrée. Vous pouvez fermer cette page.</div>
+    <div class="err" id="err">Erreur inattendue.</div>
+  </form>
+</div>
+<script>
+  const form = document.getElementById('connect');
+  const ok = document.getElementById('ok');
+  const err = document.getElementById('err');
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    ok.style.display = 'none'; err.style.display = 'none';
+    const fd = new FormData(form);
+    const payload = Object.fromEntries(fd.entries());
+    form.querySelector('button').disabled = true;
+    try {
+      const r = await fetch('/portal-actions/webhook/connect-submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+      if (r.ok) { ok.style.display = 'block'; form.reset(); }
+      else { err.textContent = 'Erreur: ' + r.status + ' ' + (await r.text()); err.style.display = 'block'; }
+    } catch (e2) { err.textContent = String(e2); err.style.display = 'block'; }
+    form.querySelector('button').disabled = false;
+  });
+</script>

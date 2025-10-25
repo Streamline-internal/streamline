@@ -1,0 +1,37 @@
+services:
+  traefik:
+    image: traefik:v3.1
+    container_name: traefik-traefik-1
+    restart: unless-stopped
+    networks: ["web"]
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      CF_DNS_API_TOKEN_FILE: /run/secrets/cf_api_token
+    secrets:
+      - cf_api_token
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /opt/streamline/traefik/traefik.yml:/traefik.yml:ro
+      - /opt/streamline/traefik/acme.json:/acme.json
+    labels:
+      traefik.enable: "true"
+
+      # Router bootstrap (à garder le temps d'émettre le wildcard)
+      traefik.http.routers.bootstrap-https.entrypoints: websecure
+      traefik.http.routers.bootstrap-https.rule: Host(`bootstrap.streamline-internal.com`)
+      traefik.http.routers.bootstrap-https.tls: "true"
+      traefik.http.routers.bootstrap-https.tls.certresolver: cloudflare
+      traefik.http.routers.bootstrap-https.tls.domains[0].main: streamline-internal.com
+      traefik.http.routers.bootstrap-https.tls.domains[0].sans: "*.streamline-internal.com"
+
+      # Service factice (pointage local) — juste pour satisfaire Traefik
+      traefik.http.services.bootstrap.loadbalancer.server.port: "8080"
+      traefik.http.routers.bootstrap-https.service: bootstrap
+networks:
+  web:
+    external: true
+secrets:
+  cf_api_token:
+    file: /opt/streamline/secrets/cf_api_token.txt

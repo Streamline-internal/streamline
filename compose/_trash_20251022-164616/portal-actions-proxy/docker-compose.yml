@@ -1,0 +1,29 @@
+services:
+  portal-actions-proxy:
+    image: nginx:1.25-alpine
+    container_name: portal-actions-proxy
+    restart: unless-stopped
+    networks:
+      - web
+      - hoppscotch_default
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./www:/etc/nginx/www:ro
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+      - "traefik.http.middlewares.api-redirect.redirectscheme.scheme=https"
+      - "traefik.http.routers.api-http.entrypoints=web"
+      - "traefik.http.routers.api-http.middlewares=api-redirect"
+      - "traefik.http.routers.api-http.rule=Host(`api.streamline-internal.com`)"
+      - "traefik.http.routers.api-https.entrypoints=websecure"
+      - "traefik.http.routers.api-https.rule=Host(`api.streamline-internal.com`)"
+      - "traefik.http.routers.api-https.tls=true"
+      - "traefik.http.routers.api-https.service=api-svc"
+      - "traefik.http.services.api-svc.loadbalancer.server.port=80"
+
+networks:
+  web:
+    external: true
+  hoppscotch_default:
+    external: true

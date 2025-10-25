@@ -1,0 +1,26 @@
+services:
+  traefik:
+    image: traefik:v3.0
+    container_name: traefik-traefik-1
+    command:
+      - --log.level=INFO
+      - --api.dashboard=false
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --providers.file.directory=/dynamic
+      - --providers.file.watch=true
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /opt/streamline/traefik/acme.json:/acme.json
+      - /opt/streamline/traefik/dynamic:/dynamic
+      - /opt/streamline/certs:/certs
+    networks: [ "web" ]
+    restart: unless-stopped
+networks:
+  web:
+    external: true

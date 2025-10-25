@@ -1,0 +1,16 @@
+services:
+  opscotch:
+    environment:
+      # Backend <-> DB
+      DATABASE_URL: "postgresql://opscotch:Ij21G6FnFr%3C%40%2AVP%2CNjjwL3p%2FRG22Rd0b7e%3D%3DmBM%3FyHDAvh%3BLSO%2A%3Duy.d@db:5432/opscotch?schema=public"
+
+      # URLs & cookies (évite le crash startsWith + cookies stricts)
+      BASE_URL: "http://localhost:3170"
+      NEXTAUTH_URL: "http://localhost:3170"
+      COOKIE_DOMAIN: "localhost"
+      DISABLE_SECURE_COOKIES: "true"
+
+    ports:
+      - "3170:3170"
+      - "3000:3000"
+      - "8080:8080"

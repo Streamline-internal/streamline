@@ -1,0 +1,6 @@
+tls:
+  stores:
+    default:
+      defaultCertificate:
+        certFile: /certs/lego/certificates/streamline-internal.com.crt
+        keyFile:  /certs/lego/certificates/streamline-internal.com.key

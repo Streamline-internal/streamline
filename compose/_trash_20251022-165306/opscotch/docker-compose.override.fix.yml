@@ -1,0 +1,37 @@
+services:
+  opscotch:
+    image: hoppscotch/hoppscotch:latest
+    environment:
+      BASE_URL: ${BASE_URL}
+      APP_BASE_URL: ${APP_BASE_URL}
+      NEXTAUTH_URL: ${NEXTAUTH_URL}
+      VITE_BASE_URL: ${VITE_BASE_URL}
+      VITE_BACKEND_API_URL: ${VITE_BACKEND_API_URL}
+      PUBLIC_URL: ${PUBLIC_URL}
+      SITE_URL: ${SITE_URL}
+      WHITELISTED_ORIGINS: ${WHITELISTED_ORIGINS}
+
+      COOKIE_DOMAIN: ${COOKIE_DOMAIN}
+      SESSION_COOKIE_DOMAIN: ${SESSION_COOKIE_DOMAIN}
+      DISABLE_SECURE_COOKIES: ${DISABLE_SECURE_COOKIES}
+      ALLOW_SECURE_COOKIES: ${ALLOW_SECURE_COOKIES}
+
+      DATABASE_URL: ${DATABASE_URL}
+
+      PORT: ${PORT}
+      BACKEND_PORT: ${BACKEND_PORT}
+      WEB_PORT: ${WEB_PORT}
+      NODE_ENV: ${NODE_ENV}
+
+      DATA_ENCRYPTION_KEY: ${DATA_ENCRYPTION_KEY}
+      NEXTAUTH_SECRET: ${NEXTAUTH_SECRET}
+
+    # Expose tout (UI / proxy / backend direct)
+    ports:
+      - "3000:3000"
+      - "3170:3170"
+      - "8080:8080"
+
+    # Healthcheck neutralisé au boot (évite restart en boucle)
+    healthcheck:
+      test: ["CMD", "true"]

@@ -1,0 +1,50 @@
+services:
+  postgres:
+    image: postgres:15
+    container_name: hoppscotch-postgres-1
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - hopps_db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL","pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 2s
+      timeout: 2s
+      retries: 90
+
+  migrator:
+    image: hoppscotch/hoppscotch:latest
+    container_name: hoppscotch-migrator-1
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file: ./.env
+    entrypoint: ["/bin/sh","-lc"]
+    command: >
+      'set -e;
+       cd /dist/backend 2>/dev/null || cd /apps/server 2>/dev/null || cd /;
+       (npx prisma migrate deploy || pnpm prisma migrate deploy || yarn prisma migrate deploy || ./node_modules/.bin/prisma migrate deploy);
+       (npx prisma generate || pnpm prisma generate || yarn prisma generate || ./node_modules/.bin/prisma generate)'
+
+  hoppscotch:
+    image: hoppscotch/hoppscotch:latest
+    container_name: hoppscotch-hoppscotch-1
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
+    env_file: ./.env
+    ports:
+      - "3000:3000"
+      - "3170:3170"
+    volumes:
+      - hopps_data:/data
+
+volumes:
+  hopps_db_data:
+  hopps_data:

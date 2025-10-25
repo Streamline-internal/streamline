@@ -1,0 +1,31 @@
+services:
+  uptime:
+    image: louislam/uptime-kuma:latest
+    env_file: [ "/opt/streamline/config/.env" ]
+    environment:
+      - TZ
+    volumes:
+      - /opt/streamline/data/uptime:/app/data
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: "web"
+
+      # HTTPS
+      traefik.http.routers.uptime-https.entrypoints: websecure
+      traefik.http.routers.uptime-https.rule: Host(`status.streamline-internal.com`)
+      traefik.http.routers.uptime-https.tls: "true"
+      traefik.http.routers.uptime-https.service: uptime
+      traefik.http.services.uptime.loadbalancer.server.port: "3001"
+
+      # HTTP -> HTTPS
+      traefik.http.routers.uptime-http.entrypoints: web
+      traefik.http.routers.uptime-http.rule: Host(`status.streamline-internal.com`)
+      traefik.http.routers.uptime-http.middlewares: redirect-https
+      traefik.http.routers.uptime-http.service: uptime
+      traefik.http.middlewares.redirect-https.redirectscheme.scheme: https
+      traefik.http.middlewares.redirect-https.redirectscheme.permanent: "true"
+    networks: [ "web" ]
+    restart: always
+networks:
+  web:
+    external: true

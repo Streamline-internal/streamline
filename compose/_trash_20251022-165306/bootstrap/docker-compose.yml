@@ -1,0 +1,26 @@
+services:
+  whoami-bootstrap:
+    image: traefik/whoami:v1.10
+    container_name: whoami-bootstrap
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: "web"
+
+      traefik.http.services.bootstrap.loadbalancer.server.port: "80"
+
+      traefik.http.routers.bootstrap-http.entrypoints: web
+      traefik.http.routers.bootstrap-http.rule: Host(`bootstrap.${STREAMLINE_DOMAIN}`)
+      traefik.http.routers.bootstrap-http.middlewares: bootstrap-https
+
+      traefik.http.middlewares.bootstrap-https.redirectscheme.scheme: https
+      traefik.http.middlewares.bootstrap-https.redirectscheme.permanent: "true"
+
+      traefik.http.routers.bootstrap-https.entrypoints: websecure
+      traefik.http.routers.bootstrap-https.rule: Host(`bootstrap.${STREAMLINE_DOMAIN}`)
+      traefik.http.routers.bootstrap-https.tls: "true"
+      traefik.http.routers.bootstrap-https.service: bootstrap
+    networks: ["web"]
+    restart: unless-stopped
+networks:
+  web:
+    external: true

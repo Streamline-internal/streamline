@@ -1,0 +1,25 @@
+services:
+  db:
+    environment:
+      POSTGRES_USER: opscotch
+      POSTGRES_PASSWORD: 'Ij21G6FnFr<@*VP,NjjwL3p/RG22Rd0b7e==mBM?yHDAvh;LSO*=uy.d'
+      POSTGRES_DB: opscotch
+
+  opscotch:
+    environment:
+      BACKEND_PORT: "3170"
+      DATABASE_URL: "postgresql://opscotch:Ij21G6FnFr%3C%40%2AVP%2CNjjwL3p%2FRG22Rd0b7e%3D%3DmBM%3FyHDAvh%3BLSO%2A%3Duy.d@db:5432/opscotch?schema=public"
+
+      BASE_URL: "https://api.streamline-internal.com"
+      NEXTAUTH_URL: "https://api.streamline-internal.com"
+      COOKIE_DOMAIN: "api.streamline-internal.com"
+      DISABLE_SECURE_COOKIES: "true"
+
+# --- fix cookies for local HTTP bootstrap ---
+services:
+  opscotch:
+    environment:
+      BASE_URL: "http://localhost:3170"
+      NEXTAUTH_URL: "http://localhost:3170"
+      COOKIE_DOMAIN: "localhost"
+      DISABLE_SECURE_COOKIES: "true"

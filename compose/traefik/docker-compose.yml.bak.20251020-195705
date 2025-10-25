@@ -1,0 +1,48 @@
+services:
+  traefik:
+    container_name: traefik-traefik-1
+    image: traefik:v3.0
+    restart: unless-stopped
+    env_file:
+      - ./.acme.env
+      - /opt/streamline/compose/traefik/.acme.env
+    command:
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+
+      # ACME (STAGING d'abord)
+      - --certificatesresolvers.cloudflare.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.cloudflare.acme.storage=/acme.json
+      - --certificatesresolvers.cloudflare.acme.caserver=https://acme-staging-v02.api.letsencrypt.org/directory
+      - --certificatesresolvers.cloudflare.acme.dnschallenge=true
+      - --certificatesresolvers.cloudflare.acme.dnschallenge.provider=cloudflare
+
+      # Tous les routers HTTPS utilisent ce resolver
+      - --entrypoints.websecure.http.tls.certresolver=cloudflare
+      - --entrypoints.websecure.http.tls.domains[0].main=${STREAMLINE_DOMAIN}
+      - --entrypoints.websecure.http.tls.domains[0].sans=*.${STREAMLINE_DOMAIN}
+
+      # Logs utiles
+      - --accesslog=true
+      - --log.level=INFO
+
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - web
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /opt/streamline/traefik/acme.json:/acme.json
+
+    environment:
+      # Sécurité: variables passées au provider DNS (lego)
+      CF_DNS_API_TOKEN: ${CF_DNS_API_TOKEN}
+      CF_API_TOKEN: ${CF_API_TOKEN}
+
+networks:
+  web:
+    external: true

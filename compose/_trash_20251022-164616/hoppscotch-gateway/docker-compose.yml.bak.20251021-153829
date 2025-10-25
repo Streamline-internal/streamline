@@ -1,0 +1,37 @@
+services:
+  hoppscotch-gateway:
+    container_name: hoppscotch-gateway
+    image: nginx:1.27-alpine
+    restart: unless-stopped
+    volumes:
+      - /opt/streamline/compose/hoppscotch-gateway/nginx.conf:/etc/nginx/nginx.conf:ro
+      - /opt/streamline/compose/hoppscotch-gateway/www:/usr/share/nginx/html:ro
+    networks:
+      web:
+        aliases: [hoppscotch-gateway]
+      hoppscotch_default:
+        aliases: [hoppscotch-gateway]
+    labels:
+      - "traefik.enable=true"
+
+      # ROOT -> priorité basse (laisse passer /portal-actions/* au-dessus)
+      - "traefik.http.routers.hopp-root-https.rule=Host(`api.streamline-internal.com`)"
+      - "traefik.http.routers.hopp-root-https.entrypoints=websecure"
+      - "traefik.http.routers.hopp-root-https.tls=true"
+      - "traefik.http.routers.hopp-root-https.service=hopp-svc"
+      - "traefik.http.routers.hopp-root-https.priority=10"
+
+      - "traefik.http.routers.hopp-root-http.rule=Host(`api.streamline-internal.com`)"
+      - "traefik.http.routers.hopp-root-http.entrypoints=web"
+      - "traefik.http.routers.hopp-root-http.middlewares=hopp-redirect"
+      - "traefik.http.routers.hopp-root-http.priority=10"
+
+      - "traefik.http.middlewares.hopp-redirect.redirectscheme.scheme=https"
+      - "traefik.http.services.hopp-svc.loadbalancer.server.port=80"
+      - "traefik.docker.network=web"
+
+networks:
+  web:
+    external: true
+  hoppscotch_default:
+    external: true

@@ -1,0 +1,67 @@
+services:
+  traefik:
+    image: traefik:v3.1
+    container_name: traefik-traefik-1
+    restart: always
+
+    env_file: [ "/opt/streamline/config/.env" ]
+    environment:
+      - CLOUDFLARE_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+      - CF_DNS_API_TOKEN=${CLOUDFLARE_API_TOKEN}
+
+    command:
+      # Providers & logs
+      - --providers.docker=true
+      - --providers.docker.exposedbydefault=false
+      - --entrypoints.web.address=:80
+      - --entrypoints.websecure.address=:443
+      - --accesslog=true
+      - --log.level=INFO
+
+      # ✅ ACME (resolver 'cloudflare') — STAGING SAFE
+      - --certificatesresolvers.cloudflare.acme.email=${ACME_EMAIL}
+      - --certificatesresolvers.cloudflare.acme.storage=/acme.json
+      - --certificatesresolvers.cloudflare.acme.caserver=https://acme-v02.api.letsencrypt.org/directory
+      - --certificatesresolvers.cloudflare.acme.dnschallenge.provider=cloudflare
+
+      # ✅ Utiliser ce resolver par défaut sur websecure (évite l'erreur "nonexistent resolver")
+      - --entrypoints.websecure.http.tls.certresolver=cloudflare
+
+      # (Optionnel) décommenter pour forcer TLS v1.2+
+      # - --entrypoints.websecure.http.tls.options=default
+      # - --tls.options.default.minVersion=VersionTLS12
+
+    ports:
+      - "80:80"
+      - "443:443"
+    networks: [ "web" ]
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /opt/streamline/traefik/traefik.yml:/etc/traefik/traefik.yml:ro
+      - /opt/streamline/traefik/acme.json:/acme.json
+      - /etc/traefik/dynamic:/etc/traefik/dynamic:ro
+
+    labels:
+      traefik.enable: "true"
+      traefik.docker.network: "web"
+
+      # HTTP -> HTTPS global (facultatif)
+      traefik.http.routers.http-catch.entrypoints: web
+      traefik.http.routers.http-catch.rule: HostRegexp(`{any:.+}`)
+      traefik.http.routers.http-catch.middlewares: redir-https
+      traefik.http.middlewares.redir-https.redirectscheme.scheme: https
+      traefik.http.middlewares.redir-https.redirectscheme.permanent: "true"
+
+      # 🔔 Router bootstrap pour déclencher 1 seul cert: apex + wildcard
+      traefik.http.routers.bootstrap-https.entrypoints: websecure
+      traefik.http.routers.bootstrap-https.rule: Host(`bootstrap.${STREAMLINE_DOMAIN}`)
+      traefik.http.routers.bootstrap-https.tls: "true"
+      traefik.http.routers.bootstrap-https.service: "api@internal"
+
+      # Domains (pris par le resolver par défaut défini sur websecure)
+      traefik.http.routers.bootstrap-https.tls.domains[0].main: "${STREAMLINE_DOMAIN}"
+      traefik.http.routers.bootstrap-https.tls.domains[0].sans: "*.${STREAMLINE_DOMAIN}"
+
+networks:
+  web:
+    external: true

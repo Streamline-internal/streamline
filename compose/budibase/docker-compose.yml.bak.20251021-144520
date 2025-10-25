@@ -1,0 +1,40 @@
+version: "3.8"
+
+services:
+  budibase:
+    image: budibase/budibase:latest
+    restart: unless-stopped
+    env_file:
+      - /opt/streamline/config/.env
+    environment:
+      - BB_ADMIN_EMAIL=${PORTAL_BUDIBASE_ADMIN_EMAIL:-admin@local}
+      - BB_ADMIN_PASSWORD=${PORTAL_BUDIBASE_ADMIN_PASSWORD:-ChangeMe_123!}
+    volumes:
+      - /opt/streamline/data/budibase:/data
+    networks:
+      - web
+    labels:
+      - "traefik.enable=true"
+
+      # HTTPS router
+      - "traefik.http.routers.budibase.rule=Host(`portal.streamline-internal.com`)"
+      - "traefik.http.routers.budibase.entrypoints=${PORTAL_TRAEFIK_ENTRYPOINT:-websecure}"
+      - "traefik.http.routers.budibase.tls=true"
+
+      # HTTP router -> redirect to HTTPS
+      - "traefik.http.routers.budibase-http.rule=Host(`portal.streamline-internal.com`)"
+      - "traefik.http.routers.budibase-http.entrypoints=web"
+      - "traefik.http.routers.budibase-http.middlewares=budibase-redirect"
+
+      # Redirect middleware
+      - "traefik.http.middlewares.budibase-redirect.redirectscheme.scheme=https"
+
+      # Service port (internal container port)
+      - "traefik.http.services.budibase.loadbalancer.server.port=${PORTAL_BUDIBASE_INTERNAL_PORT}"
+
+      # Force Traefik to use the 'web' docker network for this service
+      - "traefik.docker.network=web"
+
+networks:
+  web:
+    external: true

@@ -1,0 +1,50 @@
+name: nango
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: nango-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: nango
+      POSTGRES_PASSWORD: nango
+      POSTGRES_DB: nango
+    volumes:
+      - /opt/streamline/data/nango/postgres:/var/lib/postgresql/data
+    networks: [web]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U nango -d nango"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  server:
+    image: nangohq/nango-server:0.69.5
+    container_name: nango-server
+    restart: unless-stopped
+    environment:
+      NANGO_DB_USER: nango
+      NANGO_DB_PASSWORD: nango
+      NANGO_DB_HOST: nango-postgres
+      NANGO_DB_PORT: 5432
+      NANGO_DB_NAME: nango
+      NANGO_SERVER_PORT: 3003
+      NANGO_CONNECT_UI_PORT: 3009
+      NANGO_CALLBACK_URL: "https://connect.streamline-internal.com/oauth/callback"
+      NANGO_DASHBOARD_URL: "https://connect.streamline-internal.com"
+    depends_on:
+      - postgres
+    networks: [web]
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=web"
+      - "traefik.http.routers.nango-connect-ui.rule=Host(`connect.streamline-internal.com`)"
+      - "traefik.http.routers.nango-connect-ui.entrypoints=websecure"
+      - "traefik.http.routers.nango-connect-ui.tls=true"
+      - "traefik.http.services.nango-connect-ui.loadbalancer.server.port=3009"
+      - "traefik.http.routers.nango-connect-api.rule=Host(`connect.streamline-internal.com`) && (PathPrefix(`/api`) || PathPrefix(`/oauth`) || PathPrefix(`/account`) || PathPrefix(`/webhook`))"
+      - "traefik.http.routers.nango-connect-api.entrypoints=websecure"
+      - "traefik.http.routers.nango-connect-api.tls=true"
+      - "traefik.http.services.nango-connect-api.loadbalancer.server.port=3003"
+networks:
+  web:
+    external: true
