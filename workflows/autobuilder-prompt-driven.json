@@ -1,0 +1,51 @@
+{
+  "name": "Streamline - AutoBuilder Prompt-Driven",
+  "active": true,
+  "settings": {
+    "timezone": "Europe/Paris",
+    "saveManualExecutions": true,
+    "saveDataErrorExecution": "all",
+    "saveDataSuccessExecution": "none"
+  },
+  "nodes": [
+    {
+      "id": "WebhookAutobuilder",
+      "name": "Webhook - Build Request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [260, 300],
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "autobuilder/build",
+        "responseMode": "onReceived",
+        "responseData": "firstEntryJson",
+        "options": {
+          "rawBody": false
+        }
+      }
+    },
+    {
+      "id": "LoadContext",
+      "name": "Load Context",
+      "type": "n8n-nodes-base.function",
+      "typeVersion": 2,
+      "position": [620, 300],
+      "parameters": {
+        "functionCode": "const body = items[0].json || {};\nconst userDescription = body.description || body.workflow_description || null;\nconst env = $env.AUTOBUILDER_ENV || 'dev';\nconst slug = (body.slug || (userDescription || 'autobuilder').toLowerCase().replace(/[^a-z0-9]+/g, '-')).replace(/^-|-$/g, '');\nreturn [{ json: { run_id: $now.toISO(), env, workflow_slug: slug, description: userDescription } }];"
+      }
+    }
+  ],
+  "connections": {
+    "Webhook - Build Request": {
+      "main": [
+        [
+          {
+            "node": "Load Context",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  }
+}

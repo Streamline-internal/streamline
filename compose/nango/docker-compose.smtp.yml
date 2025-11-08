@@ -1,5 +1,0 @@
-services:
-  server:
-    environment:
-      SMTP_URL: "smtp://5aa3ab43-d4b9-49b0-ad14-e4e6e6967d93:5aa3ab43-d4b9-49b0-ad14-e4e6e6967d93@smtp.postmarkapp.com:587"
-      SMTP_FROM: "no-reply@streamline-internal.com"

@@ -6,3 +6,8 @@ node_modules/
 *.key
 *.crt
 certs/
+vault-data/
+secrets/
+config/*.env
+*.env
+*.backup.*

@@ -1,28 +1,4 @@
 services:
-  nango:
-    image: nangohq/nango-server:latest
-    container_name: nango
-    restart: always
-    env_file:
-      - .env
-    environment:
-      - SERVER_PORT=3003
-      - NODE_ENV=production
-    depends_on:
-      - nango-db
-    ports:
-      - "3003:3003"
-    networks:
-      - nango-net
-      - traefik_proxy
-    labels:
-      - "traefik.enable=true"
-      - "traefik.http.routers.nango.rule=Host(`connect.streamline-internal.com`)"
-      - "traefik.http.routers.nango.entrypoints=websecure"
-      - "traefik.http.routers.nango.tls=true"
-      - "traefik.http.services.nango.loadbalancer.server.port=3003"
-      - "traefik.docker.network=traefik_proxy"
-
   nango-db:
     image: postgres:14
     container_name: nango-db
@@ -32,9 +8,29 @@ services:
       POSTGRES_PASSWORD: nango
       POSTGRES_DB: nango
     volumes:
-      - ./data:/var/lib/postgresql/data
+      - nango-db-data:/var/lib/postgresql/data
+
+  nango:
+    image: nangohq/nango-server:latest
+    container_name: nango
+    restart: always
+    depends_on:
+      - nango-db
+    env_file:
+      - .env
+    ports:
+      - "3003:3003"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.nango.rule=Host(`connect.streamline-internal.com`)"
+      - "traefik.http.services.nango.loadbalancer.server.port=3003"
+      - "traefik.docker.network=traefik_proxy"
     networks:
       - nango-net
+      - traefik_proxy
+
+volumes:
+  nango-db-data:
 
 networks:
   nango-net:
